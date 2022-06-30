@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import type { RegisterForm } from './types.server'
 import { prisma } from './prisma.server'
+import { getUserId, logout } from './session.server'
 
 export const createUser = async (user: RegisterForm) => {
   const passwordHash = await bcrypt.hash(user.password, 10)
@@ -15,4 +16,21 @@ export const createUser = async (user: RegisterForm) => {
     },
   })
   return { id: newUser.id, email: user.email }
+}
+
+export async function getUser(request: Request) {
+  const userId = await getUserId(request)
+  if (typeof userId !== 'string') {
+    return null
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, profile: true },
+    })
+    return user
+  } catch {
+    throw logout(request)
+  }
 }
