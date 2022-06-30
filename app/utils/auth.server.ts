@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs'
 import type { LoginForm, RegisterForm } from './types.server'
 import { prisma } from './prisma.server'
 import { createUser } from './users.server'
+import { createUserSession } from './session.server'
 
 
 export async function register(user: RegisterForm) {
@@ -24,6 +25,8 @@ export async function register(user: RegisterForm) {
      { status: 400 },
    )
  }
+
+ return createUserSession(newUser.id, '/');
 }
 
 export async function login({ email, password }: LoginForm) {
@@ -34,5 +37,5 @@ export async function login({ email, password }: LoginForm) {
     if (!user || !(await bcrypt.compare(password, user.password)))
       return json({ error: `Incorrect login` }, { status: 400 })
   
-    return { id: user.id, email }
+      return createUserSession(user.id, '/');
   }
