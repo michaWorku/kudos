@@ -1,10 +1,15 @@
 import { useState } from 'react'
 import { FormField } from '~/components/FormField'
 import { Layout } from '~/components/Layout'
-
-import { ActionFunction, json } from '@remix-run/node'
+import { ActionFunction, json, LoaderFunction, redirect } from '@remix-run/node'
 import { validateEmail, validateName, validatePassword } from '~/utils/validator.server'
 import { login, register } from '~/utils/auth.server'
+import { getUser } from '~/utils/users.server'
+
+export const loader: LoaderFunction = async ({ request }) => {
+  // If there's already a user in the session, redirect to the home page
+  return (await getUser(request)) ? redirect('/') : null
+}
 
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData()
