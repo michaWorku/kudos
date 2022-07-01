@@ -1,5 +1,5 @@
-import { KudoStyle } from '@prisma/client'
-import { json, LoaderFunction, redirect } from '@remix-run/node'
+import { Color, Emoji, KudoStyle } from '@prisma/client'
+import { ActionFunction, json, LoaderFunction, redirect } from '@remix-run/node'
 import { useActionData, useLoaderData } from '@remix-run/react'
 import { useState } from 'react'
 import { Kudo } from '~/components/Kudo'
@@ -8,6 +8,8 @@ import { Portal } from '~/components/Portal'
 import { SelectBox } from '~/components/SelectBox'
 import { UserCircle } from '~/components/UserCircle'
 import { colorMap, emojiMap } from '~/utils/constants'
+import { createKudo } from '~/utils/kudo.server'
+import { requireUserId } from '~/utils/session.server'
 import { getUser, getUserById } from '~/utils/users.server'
 
 
@@ -22,6 +24,43 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   const user = await getUser(request)
   return json({ recipient, user })
 }
+
+export const action: ActionFunction = async ({ request }) => {
+  const userId = await requireUserId(request)
+  // 2 Pulls out all of the form data and fields you need from the request.
+  const form = await request.formData()
+  const message = form.get('message')
+  const backgroundColor = form.get('backgroundColor')
+  const textColor = form.get('textColor')
+  const emoji = form.get('emoji')
+  const recipientId = form.get('recipientId')
+  // 3 Validates all of the form data and send the appropriate errors 
+  //   back to the form to be displayed if something goes wrong.
+  if (
+    typeof message !== 'string' ||
+    typeof recipientId !== 'string' ||
+    typeof backgroundColor !== 'string' ||
+    typeof textColor !== 'string' ||
+    typeof emoji !== 'string'
+  ) {
+    return json({ error: `Invalid Form Data` }, { status: 400 })
+  }
+  if (!message.length) {
+    return json({ error: `Please provide a message.` }, { status: 400 })
+  }
+  if (!recipientId.length) {
+    return json({ error: `No recipient found...` }, { status: 400 })
+  }
+  // 4 Creates the new kudo
+  await createKudo(message, userId, recipientId, {
+    backgroundColor: backgroundColor as Color,
+    textColor: textColor as Color,
+    emoji: emoji as Emoji,
+  })
+  // 5 Redirects the user to the /home route, causing the modal to close
+  return redirect('/home')
+ }
+
 
 export default function KudoModal() {
   const actionData = useActionData()
