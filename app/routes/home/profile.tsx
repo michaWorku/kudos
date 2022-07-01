@@ -1,6 +1,3 @@
-// app/routes/home/profile.tsx
-
-import { json, LoaderFunction } from "@remix-run/node"
 import { useLoaderData } from "@remix-run/react"
 import { useState } from "react"
 import { LoaderFunction, ActionFunction, redirect, json } from "@remix-run/node";
