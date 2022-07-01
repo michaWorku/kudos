@@ -5,9 +5,10 @@ import { UserPanel } from '~/components/UserPanel'
 import { requireUserId } from '~/utils/session.server'
 import { getOtherUsers } from '~/utils/users.server'
 import { Kudo as IKudo, Prisma, Profile } from '@prisma/client'
-import { getFilteredKudos } from '~/utils/kudo.server'
+import { getFilteredKudos, getRecentKudos } from '~/utils/kudo.server'
 import { Kudo } from '~/components/Kudo'
 import { SearchBar } from '~/components/SearchBar'
+import { RecentBar } from '~/components/RecentBar'
 
 interface KudoWithProfile extends IKudo {
   author: {
@@ -58,11 +59,14 @@ export const loader: LoaderFunction = async ({ request }) => {
  }
  // 4 Updates the getFilteredKudos invocation to include the new filters.
  const kudos = await getFilteredKudos(userId, sortOptions, textFilter)
- return json({ users, kudos })
+ 
+ const recentKudos = await getRecentKudos()
+  
+ return json({ users, kudos, recentKudos })
 }
 
 export default function Home() {
-  const { users, kudos } = useLoaderData()
+  const { users, kudos, recentKudos } = useLoaderData()
   return (
     <Layout>
       <Outlet />
@@ -76,7 +80,7 @@ export default function Home() {
                 <Kudo key={kudo.id} kudo={kudo} profile={kudo.author.profile} />
               ))}
             </div>
-            {/* Recent Kudos Goes Here */}
+            <RecentBar kudos={recentKudos} />
           </div>
         </div>
       </div>
