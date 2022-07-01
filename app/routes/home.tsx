@@ -4,7 +4,7 @@ import { Layout } from '~/components/Layout'
 import { UserPanel } from '~/components/UserPanel'
 import { requireUserId } from '~/utils/session.server'
 import { getOtherUsers } from '~/utils/users.server'
-import { Kudo as IKudo, Profile } from '@prisma/client'
+import { Kudo as IKudo, Prisma, Profile } from '@prisma/client'
 import { getFilteredKudos } from '~/utils/kudo.server'
 import { Kudo } from '~/components/Kudo'
 import { SearchBar } from '~/components/SearchBar'
@@ -19,8 +19,46 @@ export const loader: LoaderFunction = async ({ request }) => {
   const userId = await requireUserId(request)
   const users = await getOtherUsers(userId)
   
-  const kudos = await getFilteredKudos(userId, {}, {})
-  return json({ users, kudos })
+ // 1 Pulls out the URL parameters.
+ const url = new URL(request.url)
+ const sort = url.searchParams.get('sort')
+ const filter = url.searchParams.get('filter')
+
+ // 2 Builds a sortOptions object to pass into your Prisma query 
+ //   that may vary depending on the data passed in the URL.
+ let sortOptions: Prisma.KudoOrderByWithRelationInput = {}
+ if (sort) {
+   if (sort === 'date') {
+     sortOptions = { createdAt: 'desc' }
+   }
+   if (sort === 'sender') {
+     sortOptions = { author: { profile: { firstName: 'asc' } } }
+   }
+   if (sort === 'emoji') {
+     sortOptions = { style: { emoji: 'asc' } }
+   }
+ }
+ // 3 Builds a textFilter object to pass into your Prisma query 
+ //   that may vary depending on the data passed in the URL.
+ let textFilter: Prisma.KudoWhereInput = {}
+ if (filter) {
+   textFilter = {
+     OR: [
+       { message: { mode: 'insensitive', contains: filter } },
+       {
+         author: {
+           OR: [
+             { profile: { is: { firstName: { mode: 'insensitive', contains: filter } } } },
+             { profile: { is: { lastName: { mode: 'insensitive', contains: filter } } } },
+           ],
+         },
+       },
+     ],
+   }
+ }
+ // 4 Updates the getFilteredKudos invocation to include the new filters.
+ const kudos = await getFilteredKudos(userId, sortOptions, textFilter)
+ return json({ users, kudos })
 }
 
 export default function Home() {
