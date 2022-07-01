@@ -9,6 +9,7 @@ import { getUser, updateUser } from "~/utils/users.server"
 import type { Department } from "@prisma/client";
 import { validateName } from "~/utils/validator.server";
 import { requireUserId } from "~/utils/session.server";
+import { ImageUploader } from "~/components/ImageUploader";
 
 export const loader: LoaderFunction = async ({ request }) => {
     const user = await getUser(request)
@@ -62,7 +63,8 @@ export default function ProfileSettings() {
     const [formData, setFormData] = useState({
         firstName: user?.profile?.firstName,
         lastName: user?.profile?.lastName,
-        department: (user?.profile?.department || 'MARKETING')
+        department: (user?.profile?.department || 'MARKETING'),
+        profilePicture: user?.profile?.profilePicture || ''
         })
 
  // 3 Created a function that takes in an HTML change event and a field name as parameters.
@@ -71,12 +73,29 @@ export default function ProfileSettings() {
     setFormData(form => ({ ...form, [field]: event.target.value }))
  }
 
+ const handleFileUpload = async (file: File) => {
+    let inputFormData = new FormData()
+    inputFormData.append('profile-pic', file)
+    const response = await fetch('/avatar', {
+       method: 'POST',
+       body: inputFormData
+    })
+    const { imageUrl } = await response.json()
+    setFormData({
+       ...formData,
+       profilePicture: imageUrl
+    })
+  }
+
  // 4 Renders the basic layout of the form as well as the two input fields.
  return (
     <Modal isOpen={true} className="w-1/3">
        <div className="p-3">
         <h2 className="text-4xl font-semibold text-blue-600 text-center mb-4">Your Profile</h2>
        <div className="flex">
+        <div className="w-1/3">
+                  <ImageUploader onChange={handleFileUpload} imageUrl={formData.profilePicture || ''}/>
+        </div>
          <div className="flex-1">
            <form method="post">
              <FormField htmlFor="firstName" label="First Name" value={formData.firstName} onChange={e => handleInputChange(e, 'firstName')} />
