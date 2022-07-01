@@ -13,7 +13,9 @@
     "@remix-run/react": "^1.6.3",
     "@remix-run/vercel": "^1.6.3",
     "@vercel/node": "^1.15.2",
+    "aws-sdk": "^2.1166.0",
     "bcryptjs": "^2.4.3",
+    "cuid": "^2.1.8",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },
