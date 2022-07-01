@@ -5,10 +5,10 @@ import { FormField } from "~/components/FormField"
 import { Modal } from "~/components/Modal"
 import { SelectBox } from "~/components/SelectBox"
 import { departments } from "~/utils/constants"
-import { getUser, updateUser } from "~/utils/users.server"
+import { deleteUser, getUser, updateUser } from "~/utils/users.server"
 import type { Department } from "@prisma/client";
 import { validateName } from "~/utils/validator.server";
-import { requireUserId } from "~/utils/session.server";
+import { logout, requireUserId } from "~/utils/session.server";
 import { ImageUploader } from "~/components/ImageUploader";
 
 export const loader: LoaderFunction = async ({ request }) => {
@@ -25,6 +25,10 @@ export const action: ActionFunction = async ({ request }) => {
    let lastName = form.get('lastName')
    let department = form.get('department')
 
+   const action = form.get('_action')
+
+    switch (action) {
+        case 'save':
    // 2 Ensures each piece of data you care about is of the string data type.
    if (
       typeof firstName !== 'string'
@@ -53,6 +57,14 @@ export const action: ActionFunction = async ({ request }) => {
    // 4 Redirects to the /home route, closing the settings modal.
 
    return redirect('/home')
+
+   case 'delete':
+    // Perform delete function
+    await deleteUser(userId)
+    return logout(request)
+   default:
+    return json({ error: `Invalid Form Data` }, { status: 400 });
+ }
 }
 
 export default function ProfileSettings() {
@@ -97,7 +109,7 @@ export default function ProfileSettings() {
                   <ImageUploader onChange={handleFileUpload} imageUrl={formData.profilePicture || ''}/>
         </div>
          <div className="flex-1">
-           <form method="post">
+         <form method="post" onSubmit={e => !confirm('Are you sure?') ? e.preventDefault() : true}>
              <FormField htmlFor="firstName" label="First Name" value={formData.firstName} onChange={e => handleInputChange(e, 'firstName')} />
              <FormField htmlFor="lastName" label="Last Name" value={formData.lastName} onChange={e => handleInputChange(e, 'lastName')} />
              
@@ -110,8 +122,14 @@ export default function ProfileSettings() {
                 value={formData.department} 
                 onChange={e => handleInputChange(e, 'department')} 
             />
+             <button name="_action" value="delete" className="rounded-xl w-full bg-red-300 font-semibold text-white mt-4 px-16 py-2 transition duration-300 ease-in-out hover:bg-red-400 hover:-translate-y-1">
+                Delete Account
+             </button>
              <div className="w-full text-right mt-4">
-               <button className="rounded-xl bg-yellow-300 font-semibold text-blue-600 px-16 py-2 transition duration-300 ease-in-out hover:bg-yellow-400 hover:-translate-y-1">
+               <button className="rounded-xl bg-yellow-300 font-semibold text-blue-600 px-16 py-2 transition duration-300 ease-in-out hover:bg-yellow-400 hover:-translate-y-1"
+                name="_action" 
+                value="save"
+               >
                  Save
                 </button>
              </div>
