@@ -1,5 +1,6 @@
 import { json, LoaderFunction, redirect } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
+import { Portal } from '~/components/Portal'
 import { getUserById } from '~/utils/users.server'
 
 
@@ -17,5 +18,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 export default function KudoModal() {
 
   const {recipient} = useLoaderData()
-  return <h2> User: {recipient.id} </h2>
+  return <Portal wrapperId='kudo-modal'>
+    <h2> User: {recipient.id} </h2>
+  </Portal>
 }
