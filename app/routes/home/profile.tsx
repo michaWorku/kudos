@@ -5,8 +5,10 @@ import { FormField } from "~/components/FormField"
 import { Modal } from "~/components/Modal"
 import { SelectBox } from "~/components/SelectBox"
 import { departments } from "~/utils/constants"
-import { getUser } from "~/utils/users.server"
+import { getUser, updateUser } from "~/utils/users.server"
+import type { Department } from "@prisma/client";
 import { validateName } from "~/utils/validator.server";
+import { requireUserId } from "~/utils/session.server";
 
 export const loader: LoaderFunction = async ({ request }) => {
     const user = await getUser(request)
@@ -14,6 +16,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 }
 
 export const action: ActionFunction = async ({ request }) => {
+    const userId = await requireUserId(request);
    const form = await request.formData();
    // 1 Pulls out the form data points you need from the request object.
 
@@ -41,7 +44,11 @@ export const action: ActionFunction = async ({ request }) => {
       return json({ errors, fields: { department, firstName, lastName } }, { status: 400 });
 
    // Update the user here...
-
+   await updateUser(userId, {
+    firstName,
+    lastName,
+    department: department as Department
+  })
    // 4 Redirects to the /home route, closing the settings modal.
 
    return redirect('/home')
