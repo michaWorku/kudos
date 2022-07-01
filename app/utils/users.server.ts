@@ -34,3 +34,16 @@ export async function getUser(request: Request) {
     throw logout(request)
   }
 }
+
+export const getOtherUsers = async (userId: string) => {
+  return prisma.user.findMany({
+    where: {
+      id: { not: userId },
+    },
+    orderBy: {
+      profile: {
+        firstName: 'asc',
+      },
+    },
+  })
+}
