@@ -17,5 +17,5 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 export default function KudoModal() {
 
   const {recipient} = useLoaderData()
-  return <h2> User: {recipient} </h2>
+  return <h2> User: {recipient.id} </h2>
 }
