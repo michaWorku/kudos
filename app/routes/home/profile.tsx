@@ -3,15 +3,51 @@
 import { json, LoaderFunction } from "@remix-run/node"
 import { useLoaderData } from "@remix-run/react"
 import { useState } from "react"
+import { LoaderFunction, ActionFunction, redirect, json } from "@remix-run/node";
 import { FormField } from "~/components/FormField"
 import { Modal } from "~/components/Modal"
 import { SelectBox } from "~/components/SelectBox"
 import { departments } from "~/utils/constants"
 import { getUser } from "~/utils/users.server"
+import { validateName } from "~/utils/validator.server";
 
 export const loader: LoaderFunction = async ({ request }) => {
     const user = await getUser(request)
     return json({ user })
+}
+
+export const action: ActionFunction = async ({ request }) => {
+   const form = await request.formData();
+   // 1 Pulls out the form data points you need from the request object.
+
+   let firstName = form.get('firstName')
+   let lastName = form.get('lastName')
+   let department = form.get('department')
+
+   // 2 Ensures each piece of data you care about is of the string data type.
+   if (
+      typeof firstName !== 'string'
+      || typeof lastName !== 'string'
+      || typeof department !== 'string'
+   ) {
+      return json({ error: `Invalid Form Data` }, { status: 400 });
+   }
+
+   // 3 Validates the data using the validateName function written previously.
+   const errors = {
+      firstName: validateName(firstName),
+      lastName: validateName(lastName),
+      department: validateName(department)
+   }
+
+   if (Object.values(errors).some(Boolean))
+      return json({ errors, fields: { department, firstName, lastName } }, { status: 400 });
+
+   // Update the user here...
+
+   // 4 Redirects to the /home route, closing the settings modal.
+
+   return redirect('/home')
 }
 
 export default function ProfileSettings() {
